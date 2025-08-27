@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #1e90ff;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+        }
+
+        .map-section {
+            position: relative;
+            flex: 7; /* 70%宽度 */
+            background-color: #2a2a2a;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .processed-map {
+            width: 100%;
+            height: auto;
+        }
+
+        .overlay-data {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .overlay-item {
+            margin: 5px 0;
+        }
+
+        .sidebar {
+            flex: 3; /* 30%宽度 */
+            background-color: #e0e7f0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        .sidebar-image {
+            width: 100%;
+            height: auto;
+        }
+
+        .data-panel h2 {
+            margin-top: 0;
+        }
+
+        .data-item {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 20px;
+            background-color: #1e90ff;
+            text-align: right;
+            padding-right: 10px;
+            color: white;
+        }
+
+        footer {
+            background-color: #1e90ff;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .footer-links a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        button {
+            background-color: #1e90ff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1669d1;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>南海生物多样性监测平台</h1>
+            <p id="current-time">2025-08-25 01:36 CST</p>
+        </header>
+        <div class="main-content">
+            <div class="map-section">
+                <div id="map"></div>
+                <div class="overlay-data">
+                    <div class="overlay-item">
+                        <span>检测目标</span>
+                        <span>{{ annotation|length // 10 }}</span>
+                    </div>
+                    <div class="overlay-item">
+                        <span>置信度</span>
+                        <span>95%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="upload-section">
+                    <h2>原始图像</h2>
+                    <img src="{{ url_for('display_image', folder='uploads', filename=original) }}" alt="Original Image" class="sidebar-image">
+                </div>
+                <div class="data-panel">
+                    <h2>检测详情</h2>
+                    <div class="data-item">
+                        <label>注解</label>
+                        <pre>{{ annotation }}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <div class="footer-links">
+                <a href="#">数据筛选</a>
+                <a href="#">生物多样性</a>
+                <a href="#">记者中心</a>
+                <a href="#">监控视频</a>
+                <a href="/decision_support">生态监测决策支持</a>
+            </div>
+        </footer>
+    </div>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // 初始化地图，定位到南海（约北纬10°，东经115°）
+        var map = L.map('map').setView([10, 115], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // 实时更新时间（北京时间）
+        function updateTime() {
+            const now = new Date();
+            const options = {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+                timeZone: 'Asia/Shanghai', // 北京时间 (CST, UTC+8)
+                hour12: false
+            };
+            const timeString = now.toLocaleString('en-US', options).replace(/,/, '').replace(/\//g, '-') + ' CST';
+            document.getElementById('current-time').textContent = timeString;
+        }
+        updateTime(); // 初始调用
+        setInterval(updateTime, 1000); // 每秒更新
+    </script>
+</body>
+</html>
